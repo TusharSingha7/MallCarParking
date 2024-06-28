@@ -13,7 +13,7 @@ const ticketSchema = new mongoose.Schema({
     owner : String,
     contact : {
         type : Number,
-        length : 10
+        minLength : 10
     },
     exit_time : String,
 });

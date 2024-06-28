@@ -1,12 +1,13 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const { customerType, ticketType, parSpaceType } = require("./types");
+const { customerType, ticketType, parSpaceType, chargesType } = require("./types");
 const { Customer, ParSpace, Ticket, Charges } = require("./db");
 app.use(express.json());
 app.use(cors());
 
 app.post('/addCustomer',async (req,res)=>{
+    console.log(req.body);
     const {success} = customerType.safeParse(req.body);
     if(!success){
         res.status(404).json({
@@ -15,6 +16,15 @@ app.post('/addCustomer',async (req,res)=>{
         return;
     }
     //create customer entry
+    const check = await Customer.findOne({
+        veh_no:req.body.veh_no
+    });
+    if(check){
+        res.status(413).json({
+            msg:"customer already exists"
+        });
+        return;
+    }
     const resp = await Customer.create(req.body);
     const slot_no = req.body.slot_no;
     await ParSpace.updateOne({slot_no:slot_no},{
@@ -37,6 +47,7 @@ app.get('/freeSlot',async (req,res)=>{
     });
 });
 app.post('/generateTicket',async (req,res)=>{
+    console.log(req.body);
     const {success} = ticketType.safeParse(req.body);
     if(!success){
         res.status(404).json({
@@ -46,6 +57,9 @@ app.post('/generateTicket',async (req,res)=>{
     }
     const resp = await Ticket.create(req.body);
     //delete this customer 
+    const cusDet = await Customer.findOne({veh_no:req.body.veh_no});
+    const slot = cusDet.slot_no;
+    await ParSpace.updateOne({slot_no:slot},{status:false});
     await Customer.deleteOne({veh_no:req.body.veh_no});
     res.json({
         msg : "created successfully"
@@ -59,13 +73,23 @@ app.post('/addParking',async (req,res)=>{
         })
         return;
     }
-    const res = await ParSpace.create(req.body);
+    const check = await ParSpace.findOne({slot_no:req.body.slot_no});
+    if(check){
+        res.status(412).json({
+            msg:"space already exists"
+        });
+        return;
+    }
+    const resp = await ParSpace.create({
+        slot_no:req.body.slot_no,
+        status:false
+    });
     res.json({
         msg : "created successfully"
     })
 })
 app.post('/charges',async (req,res)=>{
-    const {success} = parSpaceType.safeParse(req.body);
+    const {success} = chargesType.safeParse(req.body);
     if(!success){
         res.status(404).json({
             msg: "incorrect inputs"
@@ -79,13 +103,14 @@ app.post('/charges',async (req,res)=>{
     if(resp){
         res.status(406).json({
             msg:"already exists kindly update it"
-        })
+        });
+        return;
     }
     const cr = await Charges.create(req.body);
     res.json({msg:"created"})
 })
 app.put('/updateCharge',async (req,res)=>{
-    const {success} = Charges.safeParse(req.body);
+    const {success} = chargesType.safeParse(req.body);
     if(!success){
         res.status(405).json({
             msg:"wrong input"

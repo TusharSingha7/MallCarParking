@@ -3,7 +3,7 @@ const customerType = zod.object({
     entry_time: zod.string(),
     veh_no: zod.string(),
     owner : zod.string(),
-    contact : zod.number().min(10).max(10),
+    contact : zod.number().min(10),
     slot_no : zod.number()
 });
 const ticketType = zod.object({
@@ -11,7 +11,7 @@ const ticketType = zod.object({
     charge : zod.number(),
     veh_no: zod.string(),
     owner : zod.string(),
-    contact : zod.number().min(10).max(10),
+    contact : zod.number().min(10),
     exit_time : zod.string(),
 });
 const chargesType = zod.object({
@@ -20,7 +20,6 @@ const chargesType = zod.object({
 });
 const parSpaceType = zod.object({
     slot_no : zod.number(),
-    status : zod.boolean()
 })
 module.exports = {
     customerType,
