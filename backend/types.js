@@ -4,7 +4,8 @@ const customerType = zod.object({
     veh_no: zod.string(),
     owner : zod.string(),
     contact : zod.number().min(10),
-    slot_no : zod.number()
+    slot_no : zod.number(),
+    veh_type : zod.string()
 });
 const ticketType = zod.object({
     entry_time: zod.string(),
@@ -13,6 +14,7 @@ const ticketType = zod.object({
     owner : zod.string(),
     contact : zod.number().min(10),
     exit_time : zod.string(),
+    veh_type : zod.string()
 });
 const chargesType = zod.object({
     type : zod.string(),

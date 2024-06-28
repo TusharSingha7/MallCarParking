@@ -5,14 +5,18 @@ const { customerType, ticketType, parSpaceType, chargesType } = require("./types
 const { Customer, ParSpace, Ticket, Charges } = require("./db");
 app.use(express.json());
 app.use(cors());
-
 app.post('/addCustomer',async (req,res)=>{
-    console.log(req.body);
     const {success} = customerType.safeParse(req.body);
     if(!success){
         res.status(404).json({
             msg : "wrong inputs"
         })
+        return;
+    }
+    if(req.body.slot_no == -1){
+        res.status(407).json({
+            msg:"Parking full cannot add"
+        });
         return;
     }
     //create customer entry
@@ -25,20 +29,29 @@ app.post('/addCustomer',async (req,res)=>{
         });
         return;
     }
+    const check2 = await ParSpace.findOne({slot_no:req.body.slot_no});
+    if(check2.status){
+        res.status(407).json({
+            msg:"parking slot already occupied get another"
+        });
+        return;
+    }
     const resp = await Customer.create(req.body);
     const slot_no = req.body.slot_no;
     await ParSpace.updateOne({slot_no:slot_no},{
         status:true
     });
     res.json({
-        msg : "added successfully"
+        msg : "added successfully",
+        slot_no : slot_no
     })
 })
 app.get('/freeSlot',async (req,res)=>{
     const resp = await ParSpace.findOne({status:false});
     if(!resp){
         res.status(411).json({
-            msg : "Parking is Full"
+            msg : "Parking is Full",
+            slot_no:-1
         })
         return;
     }

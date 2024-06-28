@@ -1,6 +1,6 @@
 //database
 const mongoose = require("mongoose");
-const { number } = require("zod");
+const { number, string } = require("zod");
 mongoose.connect("mongodb+srv://tusinghar:sqSv9wKtjMAe3@cluster0.pt2g1qa.mongodb.net/ParkingSystem");
 const chargesSchema = new mongoose.Schema({
     type: String,
@@ -16,6 +16,7 @@ const ticketSchema = new mongoose.Schema({
         minLength : 10
     },
     exit_time : String,
+    veh_type: String
 });
 const parSpaceSchema = new mongoose.Schema({
     slot_no:Number,
@@ -30,7 +31,8 @@ const customerSchema = new mongoose.Schema({
         type : Number,
         length : 10
     },
-    slot_no: Number
+    slot_no: Number,
+    veh_type:String
 });
 const Customer = mongoose.model('customer',customerSchema);
 const Ticket = mongoose.model('ticket',ticketSchema);
