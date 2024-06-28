@@ -1,38 +1,30 @@
-const z = require("zod");
-const createTicket = z.object({
-    ticket_id:z.number(),
-    entryTime:z.string(),
-    exitTime:z.string(),
-    charges:z.number(),
-    veh_no:z.string(),
-    cust_id:z.number()
+const zod = require("zod");
+const customerType = zod.object({
+    entry_time: zod.string(),
+    veh_no: zod.string(),
+    owner : zod.string(),
+    contact : zod.number().min(10).max(10),
+    slot_no : zod.number()
 });
-const createCustomer = z.object({
-    cust_id:z.number(),
-    name:z.string(),
-    gender:z.string(),
-    contact:z.number(),
-    veh_no:z.string(),
-    model:z.string(),
-    color:z.string(),
-    type:z.string(),
-    slot:z.number()
+const ticketType = zod.object({
+    entry_time: zod.string(),
+    charge : zod.number(),
+    veh_no: zod.string(),
+    owner : zod.string(),
+    contact : zod.number().min(10).max(10),
+    exit_time : zod.string(),
 });
-const checkVeh = z.object({
-    veh_no:z.string()
-})
-const createSpace = z.object({
-    slots:z.array(z.number())
-})
-const createPayment = z.object({
-    method:z.string(),
-    amount:z.number(),
-    cust_id:z.number()
+const chargesType = zod.object({
+    type : zod.string(),
+    charge : zod.number()
+});
+const parSpaceType = zod.object({
+    slot_no : zod.number(),
+    status : zod.boolean()
 })
 module.exports = {
-    createCustomer,
-    createSpace,
-    createTicket,
-    createPayment,
-    checkVeh
+    customerType,
+    ticketType,
+    parSpaceType,
+    chargesType
 }

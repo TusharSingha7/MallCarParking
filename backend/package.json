@@ -2,7 +2,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "mongoose": "^8.4.0",
+    "mongoose": "^8.4.4",
     "zod": "^3.23.8"
   },
   "name": "backend",

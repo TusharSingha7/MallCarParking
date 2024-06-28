@@ -1,147 +1,108 @@
 const express = require("express");
-const {createCustomer,createTicket,createPayment,createSpace,checkVeh} = require("./types");
-const { vehicle,customer,ticket,parkingSpace,payment,charges} = require("./db");
 const app = express();
 const cors = require("cors");
+const { customerType, ticketType, parSpaceType } = require("./types");
+const { Customer, ParSpace, Ticket, Charges } = require("./db");
 app.use(express.json());
 app.use(cors());
-app.get('/freeSlot',async function(req,res){
-    const slot_no = await parkingSpace.findOne({stat:false});
-    if(slot_no == null){
+
+app.post('/addCustomer',async (req,res)=>{
+    const {success} = customerType.safeParse(req.body);
+    if(!success){
         res.status(404).json({
-            msg:"all slots are full"
+            msg : "wrong inputs"
+        })
+        return;
+    }
+    //create customer entry
+    const resp = await Customer.create(req.body);
+    const slot_no = req.body.slot_no;
+    await ParSpace.updateOne({slot_no:slot_no},{
+        status:true
+    });
+    res.json({
+        msg : "added successfully"
+    })
+})
+app.get('/freeSlot',async (req,res)=>{
+    const resp = await ParSpace.findOne({status:false});
+    if(!resp){
+        res.status(411).json({
+            msg : "Parking is Full"
+        })
+        return;
+    }
+    res.json({
+        slot_no:resp.slot_no
+    });
+});
+app.post('/generateTicket',async (req,res)=>{
+    const {success} = ticketType.safeParse(req.body);
+    if(!success){
+        res.status(404).json({
+            msg: "incorrect inputs"
+        })
+        return;
+    }
+    const resp = await Ticket.create(req.body);
+    //delete this customer 
+    await Customer.deleteOne({veh_no:req.body.veh_no});
+    res.json({
+        msg : "created successfully"
+    })
+})
+app.post('/addParking',async (req,res)=>{
+    const {success} = parSpaceType.safeParse(req.body);
+    if(!success){
+        res.status(404).json({
+            msg: "incorrect inputs"
+        })
+        return;
+    }
+    const res = await ParSpace.create(req.body);
+    res.json({
+        msg : "created successfully"
+    })
+})
+app.post('/charges',async (req,res)=>{
+    const {success} = parSpaceType.safeParse(req.body);
+    if(!success){
+        res.status(404).json({
+            msg: "incorrect inputs"
+        })
+        return;
+    }
+    //find kro same entry nhi honi chaiye
+    const resp = await Charges.findOne({
+        type:req.body.type
+    })
+    if(resp){
+        res.status(406).json({
+            msg:"already exists kindly update it"
+        })
+    }
+    const cr = await Charges.create(req.body);
+    res.json({msg:"created"})
+})
+app.put('/updateCharge',async (req,res)=>{
+    const {success} = Charges.safeParse(req.body);
+    if(!success){
+        res.status(405).json({
+            msg:"wrong input"
         });
         return;
     }
-    res.status(200).json({
-        no:slot_no
-    })
-    return;
-})
-app.post("/addCustomer",async function(req,res){
-const custom = req.body;
-const newcustom = createCustomer.safeParse(custom);
-if(!newcustom.success){
-    res.status(411).json({
-        msg : "you sent wrong inputs"
-    })
-    return;
-}
-//else put in mongodb
-await customer.create({
-    cust_id: custom.cust_id,
-    name: custom.name,
-    gender: custom.gender,
-    contact:custom.contact,
-    veh_no:custom.veh_no
-});
-await vehicle.create({
-    veh_no:custom.veh_no,
-    type:custom.type,
-    color:custom.color,
-    model:custom.model,
-});
-const inTime = new Date();
-const response = await parkingSpace.updateOne({slot:23},{
-    stat:true,
-    veh_no:custom.veh_no,
-    entryTime:inTime
-});
-console.log(response);
-res.json({msg:"added"});
-return;
-})
-app.post("/ticket",async function(req,res){
-const veh = req.body;
-const vehCheck = checkVeh.safeParse(veh);
-if(!vehCheck.success){
-    res.status(404).json({
-        msg:"wrong vehno input send a string "
-    })
-    return;
-}
-const vehDetails = await vehicle.findOne({veh_no:veh.veh_no});
-if(vehDetails == null || vehDetails == undefined){
-    res.status(404).json({
-        msg:"no vehicle parked with this no"
-    })
-    return;
-}
-const parkDetail = await parkingSpace.findOne({veh_no:veh.veh_no});
-const inTime = new Date(parkDetail.entryTime);
-const exitTime = new Date();
-const vehtype = vehDetails.type;
-const chargeDetails = await charges.findOne({type:vehtype});
-const charge = chargeDetails.charge;
-const timeParked = Math.ceil((exitTime - inTime)/3600000);
-const cost = timeParked*charge;
-const cusDetails = await customer.findOne({veh_no:veh.veh_no});
-const tic_id = Math.ceil((Math.random())*1000000);
-const createdTicket = await ticket.create({
-    ticket_id:tic_id,
-    entryTime:inTime,
-    exitTime:exitTime,
-    charges:cost,
-    veh_no:veh.veh_no,
-    cust_id:cusDetails.cust_id
-});
-await parkingSpace.updateOne({veh_no:veh.veh_no},{
-    stat:false
-});
-await customer.deleteOne({
-    cust_id:cusDetails.cust_id
-});
-await vehicle.deleteOne({
-    veh_no:veh.veh_no
-})
-res.status(200).json(createdTicket);
-return;
-})
-app.post("/addPayment",async function(req,res){
-    const pay = req.body;
-    const checkPay = createPayment.safeParse(pay);
-    if(checkPay.success){
-        const newId =( Math.random())*10000000;
-        await payment.create({
-            cust_id:pay.cust_id,
-            method:pay.method,
-            amount:pay.amount,
-            payId:newId,
-        })
-        res.status(200).json({
-            msg:"payment added"
-        })
+    //find one 
+    const finding = await Charges.findOne({type:req.body.type});
+    if(!finding){
+        res.status(410).json({
+            msg:"no vehicle of this type exists "
+        });
         return;
     }
-    req.status(404).send("failed");
-    return;
-})
-app.post('/addSpace',async function(req,res){
-    const slotno = req.body;
-    const verify = createSpace.safeParse(slotno);
-    if(!verify.success){
-        res.status(404).send("send valid slot array");
-        return;
-    }
-    for(let i = 0;i<slotno.slots.length;i++){
-        await parkingSpace.create({
-            slot:slotno.slots[i],
-            veh_no:null,
-            entryTime:null,
-            stat:false
-        })
-    }
-    res.status(200).json({
-        msg:"slots added successfully"
-    });
-    return;
-})
-app.get('/retrieveTicket',async function(req,res){
-    const veh = req.body;
-    const veh_no = veh.veh_no;
-    const tickets = await ticket.find({veh_no:veh_no});
-    res.status(200).json({
-        tickets:tickets
+    await Charges.updateOne({type:req.body.type},req.body);
+    res.json({
+        msg : "updated sucessfully"
     })
 })
 app.listen(3000);
