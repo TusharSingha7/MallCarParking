@@ -75,7 +75,7 @@ app.post('/generateTicket',async (req,res)=>{
     await ParSpace.updateOne({slot_no:slot},{status:false});
     await Customer.deleteOne({veh_no:req.body.veh_no});
     res.json({
-        msg : "created successfully"
+        ticket : resp
     })
 })
 app.post('/addParking',async (req,res)=>{
@@ -142,5 +142,11 @@ app.put('/updateCharge',async (req,res)=>{
     res.json({
         msg : "updated sucessfully"
     })
+});
+app.get('/customers',async (req,res)=>{
+    const customers = Customer.find();
+    res.json({
+        customers
+    });
 })
 app.listen(3000);
