@@ -1,4 +1,5 @@
 //database
+
 const mongoose = require("mongoose");
 const { number, string } = require("zod");
 mongoose.connect("mongodb+srv://tusinghar:sqSv9wKtjMAe3@cluster0.pt2g1qa.mongodb.net/ParkingSystem");
